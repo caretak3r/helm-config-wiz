@@ -17,6 +17,11 @@ interface HelmComponent {
   icon: any;
   enabled: boolean;
   required?: boolean;
+  charts: {
+    name: string;
+    version: string;
+    repository: string;
+  }[];
 }
 
 export const DeploymentForm = () => {
@@ -33,6 +38,13 @@ export const DeploymentForm = () => {
       icon: Package,
       enabled: true,
       required: true,
+      charts: [
+        {
+          name: "common",
+          version: "1.2.3",
+          repository: "https://charts.bitnami.com/bitnami",
+        },
+      ],
     },
     {
       id: "platform",
@@ -41,6 +53,18 @@ export const DeploymentForm = () => {
       icon: Network,
       enabled: true,
       required: true,
+      charts: [
+        {
+          name: "cert-manager",
+          version: "v1.13.2",
+          repository: "https://charts.jetstack.io",
+        },
+        {
+          name: "ingress-nginx",
+          version: "4.8.3",
+          repository: "https://kubernetes.github.io/ingress-nginx",
+        },
+      ],
     },
   ]);
 
@@ -51,6 +75,13 @@ export const DeploymentForm = () => {
       description: "Relational database",
       icon: Database,
       enabled: false,
+      charts: [
+        {
+          name: "postgresql",
+          version: "13.2.24",
+          repository: "https://charts.bitnami.com/bitnami",
+        },
+      ],
     },
     {
       id: "redis",
@@ -58,6 +89,13 @@ export const DeploymentForm = () => {
       description: "In-memory data store",
       icon: Cpu,
       enabled: false,
+      charts: [
+        {
+          name: "redis",
+          version: "18.4.0",
+          repository: "https://charts.bitnami.com/bitnami",
+        },
+      ],
     },
     {
       id: "monitoring",
@@ -65,6 +103,18 @@ export const DeploymentForm = () => {
       description: "Prometheus + Grafana",
       icon: FileCode2,
       enabled: false,
+      charts: [
+        {
+          name: "kube-prometheus-stack",
+          version: "55.5.0",
+          repository: "https://prometheus-community.github.io/helm-charts",
+        },
+        {
+          name: "grafana",
+          version: "7.0.19",
+          repository: "https://grafana.github.io/helm-charts",
+        },
+      ],
     },
     {
       id: "vault",
@@ -72,6 +122,13 @@ export const DeploymentForm = () => {
       description: "Secrets management",
       icon: Lock,
       enabled: false,
+      charts: [
+        {
+          name: "vault",
+          version: "0.27.0",
+          repository: "https://helm.releases.hashicorp.com",
+        },
+      ],
     },
   ]);
 
@@ -157,7 +214,16 @@ export const DeploymentForm = () => {
                       <h4 className="font-semibold text-sm">{dep.name}</h4>
                       <Badge variant="secondary" className="text-xs">Required</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{dep.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{dep.description}</p>
+                    <div className="space-y-1">
+                      {dep.charts.map((chart) => (
+                        <div key={chart.name} className="text-xs font-mono text-muted-foreground flex items-center gap-2">
+                          <span className="text-primary">•</span>
+                          <span className="font-medium">{chart.name}</span>
+                          <span className="text-muted-foreground/60">v{chart.version}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <Switch checked={dep.enabled} disabled />
                 </div>
@@ -178,15 +244,23 @@ export const DeploymentForm = () => {
               return (
                 <div
                   key={comp.id}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => toggleComponent(comp.id)}
+                  className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
                 >
                   <div className={`p-2 rounded-md ${comp.enabled ? 'bg-primary/10' : 'bg-muted'}`}>
                     <Icon className={`h-5 w-5 ${comp.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm mb-1">{comp.name}</h4>
-                    <p className="text-sm text-muted-foreground">{comp.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{comp.description}</p>
+                    <div className="space-y-1">
+                      {comp.charts.map((chart) => (
+                        <div key={chart.name} className="text-xs font-mono text-muted-foreground flex items-center gap-2">
+                          <span className="text-primary">•</span>
+                          <span className="font-medium">{chart.name}</span>
+                          <span className="text-muted-foreground/60">v{chart.version}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <Switch
                     checked={comp.enabled}
