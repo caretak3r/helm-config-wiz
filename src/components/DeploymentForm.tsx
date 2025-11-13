@@ -6,7 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Package, Cpu, Database, Network, Lock, FileCode2, Rocket } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Package, Cpu, Database, Network, Lock, FileCode2, Rocket, Shield, Key, ArrowRight } from "lucide-react";
 import { ValuesPreview } from "./ValuesPreview";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,11 +25,23 @@ interface HelmComponent {
   }[];
 }
 
+interface TLSConfig {
+  istioAmbientMesh: boolean;
+  ingressTLS: 'cert-manager' | 'self-signed' | 'none';
+  appContainerTLS: boolean;
+}
+
 export const DeploymentForm = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("basic");
   const [appName, setAppName] = useState("my-app");
   const [namespace, setNamespace] = useState("default");
   const [replicas, setReplicas] = useState("1");
+  const [tlsConfig, setTLSConfig] = useState<TLSConfig>({
+    istioAmbientMesh: false,
+    ingressTLS: 'cert-manager',
+    appContainerTLS: false,
+  });
   
   const [platformDeps] = useState<HelmComponent[]>([
     {
@@ -282,13 +295,14 @@ export const DeploymentForm = () => {
 
       {/* Values Preview */}
       <div className="lg:sticky lg:top-6 lg:self-start">
-        <ValuesPreview
-          appName={appName}
-          namespace={namespace}
-          replicas={parseInt(replicas)}
-          platformDeps={platformDeps}
-          components={helmComponents}
-        />
+      <ValuesPreview
+        appName={appName}
+        namespace={namespace}
+        replicas={parseInt(replicas)}
+        platformDeps={platformDeps}
+        components={helmComponents}
+        tlsConfig={tlsConfig}
+      />
       </div>
     </div>
   );
