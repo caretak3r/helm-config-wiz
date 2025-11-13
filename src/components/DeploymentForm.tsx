@@ -153,148 +153,414 @@ export const DeploymentForm = () => {
     );
   };
 
+  const enabledCount = platformDeps.length + helmComponents.filter(c => c.enabled).length;
+
   const handleDeploy = () => {
     toast({
-      title: "Deployment initiated",
-      description: `Deploying ${appName} to ${namespace} namespace...`,
+      title: "Deployment Initiated",
+      description: `Deploying ${appName} to ${namespace} namespace with ${enabledCount} components`,
     });
   };
 
+  const handleNextTab = (currentTab: string) => {
+    const tabs = ["basic", "platform", "components", "security", "preview"];
+    const currentIndex = tabs.indexOf(currentTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1]);
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="space-y-6">
-        {/* Basic Configuration */}
-        <Card className="shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle>Basic Configuration</CardTitle>
-            <CardDescription>Configure your application deployment</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="appName">Application Name</Label>
-              <Input
-                id="appName"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
-                placeholder="my-app"
-                className="font-mono"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="namespace">Namespace</Label>
-              <Input
-                id="namespace"
-                value={namespace}
-                onChange={(e) => setNamespace(e.target.value)}
-                placeholder="default"
-                className="font-mono"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="replicas">Replicas</Label>
-              <Input
-                id="replicas"
-                type="number"
-                value={replicas}
-                onChange={(e) => setReplicas(e.target.value)}
-                min="1"
-                max="10"
-                className="font-mono"
-              />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Rocket className="w-5 h-5" />
+            Deploy Helm Chart
+          </CardTitle>
+          <CardDescription>
+            Configure your application deployment step-by-step
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="basic">1. Basic</TabsTrigger>
+              <TabsTrigger value="platform">2. Platform</TabsTrigger>
+              <TabsTrigger value="components">3. Components</TabsTrigger>
+              <TabsTrigger value="security">4. Security</TabsTrigger>
+              <TabsTrigger value="preview">5. Preview</TabsTrigger>
+            </TabsList>
 
-        {/* Platform Dependencies */}
-        <Card className="shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle>Platform Dependencies</CardTitle>
-            <CardDescription>Required infrastructure components</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {platformDeps.map((dep) => {
-              const Icon = dep.icon;
-              return (
-                <div
-                  key={dep.id}
-                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 border border-border"
-                >
-                  <div className="p-2 rounded-md bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-sm">{dep.name}</h4>
-                      <Badge variant="secondary" className="text-xs">Required</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{dep.description}</p>
-                    <div className="space-y-1">
-                      {dep.charts.map((chart) => (
-                        <div key={chart.name} className="text-xs font-mono text-muted-foreground flex items-center gap-2">
-                          <span className="text-primary">•</span>
-                          <span className="font-medium">{chart.name}</span>
-                          <span className="text-muted-foreground/60">v{chart.version}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <Switch checked={dep.enabled} disabled />
+            {/* Step 1: Basic Configuration */}
+            <TabsContent value="basic" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Application Details</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start by defining your application's basic configuration
+                  </p>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* Helmet Library Components */}
-        <Card className="shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle>Additional Components</CardTitle>
-            <CardDescription>Optional services from Helmet library</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {helmComponents.map((comp) => {
-              const Icon = comp.icon;
-              return (
-                <div
-                  key={comp.id}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors"
-                >
-                  <div className={`p-2 rounded-md ${comp.enabled ? 'bg-primary/10' : 'bg-muted'}`}>
-                    <Icon className={`h-5 w-5 ${comp.enabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="appName">Application Name</Label>
+                    <Input
+                      id="appName"
+                      value={appName}
+                      onChange={(e) => setAppName(e.target.value)}
+                      placeholder="my-app"
+                      className="font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This will be used as the release name in Kubernetes
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm mb-1">{comp.name}</h4>
-                    <p className="text-sm text-muted-foreground mb-2">{comp.description}</p>
-                    <div className="space-y-1">
-                      {comp.charts.map((chart) => (
-                        <div key={chart.name} className="text-xs font-mono text-muted-foreground flex items-center gap-2">
-                          <span className="text-primary">•</span>
-                          <span className="font-medium">{chart.name}</span>
-                          <span className="text-muted-foreground/60">v{chart.version}</span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="namespace">Target Namespace</Label>
+                    <Input
+                      id="namespace"
+                      value={namespace}
+                      onChange={(e) => setNamespace(e.target.value)}
+                      placeholder="default"
+                      className="font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The Kubernetes namespace where resources will be deployed
+                    </p>
                   </div>
-                  <Switch
-                    checked={comp.enabled}
-                    onCheckedChange={() => toggleComponent(comp.id)}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="replicas">Replica Count</Label>
+                    <Input
+                      id="replicas"
+                      type="number"
+                      min="1"
+                      value={replicas}
+                      onChange={(e) => setReplicas(e.target.value)}
+                      placeholder="1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Number of pod replicas for high availability
+                    </p>
+                  </div>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+              </div>
+              <Button onClick={() => handleNextTab("basic")} className="w-full">
+                Continue to Platform Setup
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </TabsContent>
 
-        <Separator />
+            {/* Step 2: Platform Dependencies */}
+            <TabsContent value="platform" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Platform Dependencies</h3>
+                  <p className="text-sm text-muted-foreground">
+                    These required components provide core platform functionality
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {platformDeps.map((dep) => {
+                    const Icon = dep.icon;
+                    return (
+                      <Card key={dep.id} className="relative border-primary/20 bg-primary/5">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Icon className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <CardTitle className="text-base flex items-center gap-2">
+                                {dep.name}
+                                <Badge variant="secondary" className="text-xs">Required</Badge>
+                              </CardTitle>
+                              <CardDescription className="text-sm mt-1">
+                                {dep.description}
+                              </CardDescription>
+                              <div className="mt-3 space-y-1">
+                                {dep.charts.map((chart, idx) => (
+                                  <div key={idx} className="text-xs font-mono text-muted-foreground flex items-center gap-2">
+                                    <Package className="w-3 h-3" />
+                                    <span>{chart.name}@{chart.version}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+              <Button onClick={() => handleNextTab("platform")} className="w-full">
+                Continue to Component Selection
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </TabsContent>
 
-        <Button onClick={handleDeploy} size="lg" className="w-full">
-          <Rocket className="mr-2 h-5 w-5" />
-          Deploy Helm Chart
-        </Button>
-      </div>
+            {/* Step 3: Additional Components */}
+            <TabsContent value="components" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Helmet Library Components</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Select optional components to enhance your application
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {helmComponents.map((comp) => {
+                    const Icon = comp.icon;
+                    return (
+                      <Card
+                        key={comp.id}
+                        className={`cursor-pointer transition-all ${
+                          comp.enabled
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`p-2 rounded-lg ${
+                                  comp.enabled ? "bg-primary/20" : "bg-muted"
+                                }`}
+                              >
+                                <Icon
+                                  className={`w-5 h-5 ${
+                                    comp.enabled ? "text-primary" : "text-muted-foreground"
+                                  }`}
+                                />
+                              </div>
+                              <div>
+                                <CardTitle className="text-base">{comp.name}</CardTitle>
+                                <CardDescription className="text-sm mt-1">
+                                  {comp.description}
+                                </CardDescription>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={comp.enabled}
+                              onCheckedChange={() => toggleComponent(comp.id)}
+                            />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-1">
+                            {comp.charts.map((chart, idx) => (
+                              <div key={idx} className="text-xs font-mono text-muted-foreground flex items-center gap-2">
+                                <Package className="w-3 h-3" />
+                                <span>{chart.name}@{chart.version}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+              <Button onClick={() => handleNextTab("components")} className="w-full">
+                Continue to Security Configuration
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </TabsContent>
 
-      {/* Values Preview */}
-      <div className="lg:sticky lg:top-6 lg:self-start">
+            {/* Step 4: Security & TLS Configuration */}
+            <TabsContent value="security" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">TLS & Security Configuration</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure TLS certificates and security settings
+                  </p>
+                </div>
+
+                {/* ISTIO Ambient Mesh */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <Network className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base">ISTIO Ambient Mesh</CardTitle>
+                          <CardDescription className="text-sm mt-1">
+                            Enable service mesh with mTLS for service-to-service communication
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={tlsConfig.istioAmbientMesh}
+                        onCheckedChange={(checked) =>
+                          setTLSConfig({ ...tlsConfig, istioAmbientMesh: checked })
+                        }
+                      />
+                    </div>
+                  </CardHeader>
+                  {tlsConfig.istioAmbientMesh && (
+                    <CardContent>
+                      <div className="text-sm text-muted-foreground">
+                        <Shield className="w-4 h-4 inline mr-2" />
+                        Automatic mTLS between services with zero-trust networking
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Ingress TLS */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Lock className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-base">Ingress TLS Configuration</CardTitle>
+                        <CardDescription className="text-sm mt-1">
+                          Choose how to handle TLS certificates for external traffic
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="ingressTLS"
+                          value="cert-manager"
+                          checked={tlsConfig.ingressTLS === 'cert-manager'}
+                          onChange={(e) =>
+                            setTLSConfig({ ...tlsConfig, ingressTLS: e.target.value as any })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">cert-manager (Recommended)</div>
+                          <div className="text-xs text-muted-foreground">
+                            Automatic certificate provisioning from Let's Encrypt
+                          </div>
+                        </div>
+                      </Label>
+                      <Label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="ingressTLS"
+                          value="self-signed"
+                          checked={tlsConfig.ingressTLS === 'self-signed'}
+                          onChange={(e) =>
+                            setTLSConfig({ ...tlsConfig, ingressTLS: e.target.value as any })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">Self-Signed Certificate</div>
+                          <div className="text-xs text-muted-foreground">
+                            Generate self-signed certificates for development/testing
+                          </div>
+                        </div>
+                      </Label>
+                      <Label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border hover:bg-accent">
+                        <input
+                          type="radio"
+                          name="ingressTLS"
+                          value="none"
+                          checked={tlsConfig.ingressTLS === 'none'}
+                          onChange={(e) =>
+                            setTLSConfig({ ...tlsConfig, ingressTLS: e.target.value as any })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">No TLS</div>
+                          <div className="text-xs text-muted-foreground">
+                            Disable TLS (HTTP only - not recommended for production)
+                          </div>
+                        </div>
+                      </Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Application Container TLS */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <Key className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base">Application Container TLS</CardTitle>
+                          <CardDescription className="text-sm mt-1">
+                            Mount TLS certificates directly in application containers
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={tlsConfig.appContainerTLS}
+                        onCheckedChange={(checked) =>
+                          setTLSConfig({ ...tlsConfig, appContainerTLS: checked })
+                        }
+                      />
+                    </div>
+                  </CardHeader>
+                  {tlsConfig.appContainerTLS && (
+                    <CardContent>
+                      <div className="text-sm text-muted-foreground space-y-2">
+                        <div>Certificates will be mounted at:</div>
+                        <div className="font-mono text-xs bg-muted p-2 rounded">
+                          /etc/tls/certs/tls.crt<br />
+                          /etc/tls/certs/tls.key
+                        </div>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              </div>
+              <Button onClick={() => handleNextTab("security")} className="w-full">
+                Continue to Preview & Deploy
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </TabsContent>
+
+            {/* Step 5: Preview */}
+            <TabsContent value="preview" className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Review Configuration</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Preview your generated Helm chart configuration
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Application</div>
+                    <div className="font-mono font-semibold">{appName}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Namespace</div>
+                    <div className="font-mono font-semibold">{namespace}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Components</div>
+                    <div className="font-semibold">{enabledCount} enabled</div>
+                  </div>
+                </div>
+              </div>
+              <Button onClick={handleDeploy} className="w-full" size="lg">
+                <Rocket className="w-4 h-4 mr-2" />
+                Deploy Helm Chart
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
       <ValuesPreview
         appName={appName}
         namespace={namespace}
@@ -303,7 +569,6 @@ export const DeploymentForm = () => {
         components={helmComponents}
         tlsConfig={tlsConfig}
       />
-      </div>
     </div>
   );
 };
