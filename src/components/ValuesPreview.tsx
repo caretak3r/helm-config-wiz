@@ -18,12 +18,19 @@ interface Component {
   }[];
 }
 
+interface TLSConfig {
+  istioAmbientMesh: boolean;
+  ingressTLS: 'cert-manager' | 'self-signed' | 'none';
+  appContainerTLS: boolean;
+}
+
 interface ValuesPreviewProps {
   appName: string;
   namespace: string;
   replicas: number;
   platformDeps: Component[];
   components: Component[];
+  tlsConfig: TLSConfig;
 }
 
 export const ValuesPreview = ({
@@ -32,6 +39,7 @@ export const ValuesPreview = ({
   replicas,
   platformDeps,
   components,
+  tlsConfig,
 }: ValuesPreviewProps) => {
   const { toast } = useToast();
   const [copiedChart, setCopiedChart] = useState(false);
@@ -126,6 +134,21 @@ ${comp.id}:
 
     yaml += `
 
+# Security Configuration
+${tlsConfig.istioAmbientMesh ? `istio:
+  enabled: true
+  ambient:
+    enabled: true
+  mtls:
+    mode: STRICT
+` : ''}
+${tlsConfig.appContainerTLS ? `tls:
+  containerMounts:
+    enabled: true
+    certPath: /etc/tls/certs/tls.crt
+    keyPath: /etc/tls/certs/tls.key
+    secretName: ${appName}-app-tls
+` : ''}
 # Service Configuration
 service:
   type: ClusterIP
@@ -133,19 +156,19 @@ service:
 
 # Ingress Configuration
 ingress:
-  enabled: true
-  className: nginx
+  enabled: ${tlsConfig.ingressTLS !== 'none'}
+  className: nginx${tlsConfig.ingressTLS === 'cert-manager' ? `
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"` : ''}
   hosts:
     - host: ${appName}.example.com
       paths:
         - path: /
-          pathType: Prefix
+          pathType: Prefix${tlsConfig.ingressTLS !== 'none' ? `
   tls:
-    - secretName: ${appName}-tls
+    - secretName: ${appName}-tls${tlsConfig.ingressTLS === 'self-signed' ? '-self-signed' : ''}
       hosts:
-        - ${appName}.example.com
+        - ${appName}.example.com` : ''}
 
 # Resources
 resources:
